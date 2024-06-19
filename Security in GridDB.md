@@ -3,20 +3,7 @@ Data confidentiality, integrity, and availability are central in databases. They
   
 To ensure secure storage of data within GridDB and the implementation of appropriate measures to safeguard confidentiality, integrity, and availability include encrypting sensitive data in GridDB: which entails creating an encryption key (to encode information) only known by authorized parties; devising backup strategies for important data stored in GridDB, such as using different storage locations; establishing access controls for those who can view or modify certain parts of the grid database. Here is how GridDB can be used to achieve secure information while maintaining a high level of access control procedures:
 
-### 1. Encryption of Sensitive Data:
-
-#### a. Data Encryption at Rest:
-GridDB provides encryption of the stored data, which means that important and sensitive data is protected inside the database. This security feature works by encoding the information in the data files and storage devices, making them impenetrable to unauthorized users. GridDB employs Advanced Encryption Standard (AES) among other encryption technologies so that all data is first encrypted before being saved onto any storage medium.
-```python
-# Example: Configuring encryption at rest for GridDB container
-containerInfo = griddb.ContainerInfo("sensitiveData",
-                                      [["id", griddb.Type.LONG],
-                                       ["name", griddb.Type.STRING]],
-                                      griddb.ContainerType.COLLECTION,
-                                      True)  # Enable encryption
-```
-
-#### b. Data Encryption in Transit:
+### Data Encryption in Transit:
 
 Ensuring data security while transmitting it is a concern, for GridDB, which's why it employs encryption techniques. Through the use of SSL/TLS protocols GridDB secures all interactions, between users and the server effectively thwarting any access and monitoring. This strong strategy ensures that confidential data remains safeguarded as it moves across the network.
 ```python
@@ -31,7 +18,7 @@ Establishing dependable data backup routines is essential for protecting against
 
 ```bash
 # Example: Performing a manual backup of GridDB database
-$ gs_backup -u admin -p admin -cluster my_cluster -backupdir /backup
+$ gs_backup -u admin/admin "backup name"
 ```
 
 #### b. Automated Backup Schedule:
@@ -39,7 +26,7 @@ Establishing automated backup schedules is an essential aspect of effectively ma
 
 ```bash
 # Example: Configuring automated backup schedule for GridDB database
-$ gs_backup_schedule add -u admin -p admin -cluster my_cluster -backupdir /backup -interval 24h
+$ gs_backup -u admin/admin --mode auto "backup name"
 ```
 
 ### 3. Access Controls:
@@ -57,10 +44,8 @@ GridDB provides the option to integrate with authentication systems, like LDAP (
 
 ```python
 # Example: Configuring LDAP authentication for GridDB
-gridstore.set_authentication_mode(griddb.AuthMode.CLIENT)
 gridstore.set_authentication_username("user")
 gridstore.set_authentication_password("password")
-gridstore.set_authentication_provider("ldap")
 ```
 
 Lets explore how encryption is applied in GridDB with Python focusing on the AES encryption method. Encryption plays a role, in safeguarding data stored in databases ensuring confidentiality and integrity. By encrypting data, within GridDB we enhance security measures to prevent access and uphold security standards.
