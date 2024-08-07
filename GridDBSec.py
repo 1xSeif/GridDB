@@ -26,57 +26,58 @@ def decrypt_data(key, ciphertext):
 
 try:
     # Connect to GridDB
-    try:
-        factory = griddb.StoreFactory.get_instance()
-        gridstore = factory.get_store(
-                host="127.0.0.1",
-                port=41189,
-                cluster_name="myCluster",
-                username="admin",
-                password="admin"
-            )
-    except griddb.GSException as e:
-        print("Failed to connect to GridDB:", e)
-        gridstore = None
+    factory = griddb.StoreFactory.get_instance()
+    gridstore = factory.get_store(
+        notification_member = "127.0.0.1:10001",
+        cluster_name = "myCluster",
+        username = "admin",
+        password = "admin"
+    )
 
-    if gridstore:
-        # Define Data Schema in Python with GridDB
-        # Example: Encrypting sensitive information such as credit card numbers
-        containerInfo = griddb.ContainerInfo("CreditCards",
+
+    container = griddb.ContainerInfo("CreditCard",
                                              [["id", griddb.Type.INTEGER],
                                               ["cardNumber", griddb.Type.BLOB],
-                                              ["expirationDate", griddb.Type.TIMESTAMP],
+                                              ["expirationDate", griddb.Type.STRING],
                                               ["ownerName", griddb.Type.STRING]],
-                                             griddb.ContainerType.COLLECTION, True)
-        container = gridstore.put_container(containerInfo)
-        
-        # Example encryption key
-        encryptionKey = b'This is a key123'  # 16 bytes key for AES-128
-        
-        # Example data
-        cardId = 1
-        creditCardNumber = "1234567812345678"
-        expirationDate = griddb.Timestamp(2024, 12, 31)
-        ownerName = "Saif Eddine"
-        
-        # Encrypt Data using AES
-        encryptedCardNumber = encrypt_data(encryptionKey, creditCardNumber)
-        
-        if encryptedCardNumber:
-            # Store Encrypted Data in GridDB Container
-            container.put([cardId, encryptedCardNumber, expirationDate, ownerName])
-        
-            # Retrieve Encrypted Data from GridDB Container
-            query = container.query("SELECT * FROM CreditCards")
-            rs = query.fetch()
-            while rs.has_next():
-                row = rs.next()
-                decryptedCardNumber = decrypt_data(encryptionKey, row[1])
-                if decryptedCardNumber:
-                    print("Decrypted Credit Card Number:", decryptedCardNumber)
-        else:
-            print("Failed to encrypt the credit card number")
+                                             griddb.ContainerType.COLLECTION, True
+                                             )
+    container = gridstore.put_container(container)
+    
+    # Example encryption key
+    encryptionKey = b'This is a key123'  # 16 bytes key for AES-128
+    
+    # Example data
+    cardId = 1
+    creditCardNumber = "4731324241234123"
+    expirationDate = "12/2028"
+    ownerName = "Saif Eddine"
+
+    
+    # Encrypt Data using AES
+    encryptedCardNumber = encrypt_data(encryptionKey, creditCardNumber)
+    
+    if encryptedCardNumber:
+        # Store Encrypted Data in GridDB Container
+        container.put([cardId, encryptedCardNumber,expirationDate, ownerName])
+    
+        # Retrieve Encrypted Data from GridDB Container
+        query = container.query("SELECT * FROM CreditCard")
+        rs = query.fetch()
+        while rs.has_next():
+            row = rs.next()
+            decryptedCardNumber = decrypt_data(encryptionKey, row[1])
+            if decryptedCardNumber:
+                print("Decrypted Credit Card Number:", decryptedCardNumber)
+                print("Expiration Date:", row[2])
+                print("Owner Name:", row[3])
+
+    else:
+        print("Failed to encrypt the credit card number")
+
 except griddb.GSException as e:
-    print("GridDB operation failed:", e)
-except Exception as e:
-    print("An unexpected error occurred:", e)
+    for i in range(e.get_error_stack_size()):
+        print("[", i, "]")
+        print(e.get_error_code(i))
+        print(e.get_location(i))
+        print(e.get_message(i))
