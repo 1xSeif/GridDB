@@ -45,7 +45,7 @@ try:
     container = gridstore.put_container(container)
     
     # Example encryption key
-    encryptionKey = b'This is a key123'  # 16 bytes key for AES-128
+    encryptionKey = b'1324151512412414'  # 16 bytes key for AES-128
     
     # Example data
     cardId = 1
@@ -53,9 +53,9 @@ try:
     expirationDate = "12/2028"
     ownerName = "Saif Eddine"
 
-    
     # Encrypt Data using AES
     encryptedCardNumber = encrypt_data(encryptionKey, creditCardNumber)
+    print("Encrypted Credit Card Number:", encryptedCardNumber)
     
     if encryptedCardNumber:
         # Store Encrypted Data in GridDB Container
@@ -71,7 +71,6 @@ try:
                 print("Decrypted Credit Card Number:", decryptedCardNumber)
                 print("Expiration Date:", row[2])
                 print("Owner Name:", row[3])
-
     else:
         print("Failed to encrypt the credit card number")
 
