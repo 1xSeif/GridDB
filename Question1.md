@@ -1,5 +1,5 @@
 # Title
-How do you correctly use the TIMESTAMP Data Type in GridDB with Python for the Credit Card Expiry Date?
+How can I use the TIMESTAMP Data Type in GridDB with Python?
 
 # Problem
 I'm currently developing a Python application that stores encrypted credit card information in GridDB. I'm attempting to use the TIMESTAMP data type to store the credit card expiration date instead of a STRING. However, I'm facing errors when I try to implement TIMESTAMP for the expiration date. My current code works with the expiration date as a STRING, but it fails when I attempt to switch to TIMESTAMP.
