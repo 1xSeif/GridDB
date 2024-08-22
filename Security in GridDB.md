@@ -69,13 +69,15 @@ CREATE TABLE CreditCards (
 
 After defining the data schema, a container is initialized within GridDB to hold encrypted data. Activating encryption for this container guarantees that any data stored will be automatically encrypted, utilizing the chosen encryption algorithm and key.
 ```python
-# Initialize Container for Encrypted Data
-containerInfo = griddb.ContainerInfo("CreditCards",
-                                       [["id", griddb.Type.INTEGER],
-                                        ["cardNumber", griddb.Type.BLOB],
-                                        ["expirationDate", griddb.Type.TIMESTAMP],
-                                        ["ownerName", griddb.Type.STRING]],
-                                       griddb.ContainerType.COLLECTION, True)
+# Define the GridDB container schema
+container = griddb.ContainerInfo("CreditCard",
+                                     [["id", griddb.Type.INTEGER],        # Column 1: id (INTEGER)
+                                      ["cardNumber", griddb.Type.BLOB],   # Column 2: cardNumber (BLOB)
+                                      ["expirationDate", griddb.Type.STRING],  # Column 3: expirationDate (STRING)
+                                      ["ownerName", griddb.Type.STRING]],  # Column 4: ownerName (STRING)
+                                     griddb.ContainerType.COLLECTION, True)  # Container type: Collection (row-key)
+container = gridstore.put_container(container)  # Create the container in GridDB
+    
 ```
 
 **3. Encrypt Data:**
@@ -83,23 +85,32 @@ containerInfo = griddb.ContainerInfo("CreditCards",
 Now, we encrypt sensitive data using AES. An therefore, we apply AES encryption to the sensitive data such as passwords or national security files, The advanced encryption standard (AES) algorithm system, being a widely used symmetric encryption algorithms with high security and good run-time speed.
 
 ```python
+import griddb_python as griddb
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
+import base64
 
-# Encrypt Data using AES
-def encryptData(key, plaintext):
-    cipher = AES.new(key, AES.MODE_CBC)
-    ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
-    return ciphertext
+# AES Encryption and Decryption Functions
+def encrypt_data(key, plaintext):
+    try:
+        cipher = AES.new(key, AES.MODE_CBC)
+        ciphertext = cipher.encrypt(pad(plaintext.encode(), AES.block_size))
+        return base64.b64encode(cipher.iv + ciphertext).decode('utf-8')
+    except Exception as e:
+        print("Encryption failed:", e)
+        return None
 ```
 
-**4. Store Encrypted Data:**
+**4. Encrypt & Store Encrypted Data:**
 
 After encryption, data is secured in a GridDB container thus insuring encrypted data still remains safe within the database. Only authorized users holding appropriate encryption keys may read it back out again after decryption.
 
 ```python
+# Encrypt Data using AES
+    encryptedCardNumber = encrypt_data(encryptionKey, creditCardNumber)
+    print("Encrypted Credit Card Number:", encryptedCardNumber)
+
 # Store Encrypted Data in GridDB Container
-encryptedCardNumber = encryptData(encryptionKey, creditCardNumber)
 container.put([cardId, encryptedCardNumber, expirationDate, ownerName])
 ```
 
@@ -108,10 +119,16 @@ container.put([cardId, encryptedCardNumber, expirationDate, ownerName])
 In order to access encrypted data, you need to perform retrieval operations on the GridDB container. After getting the encrypted data, you can use corresponding AES decryption method to decrypt it.
 ```python
 # Retrieve Encrypted Data from GridDB Container
-resultSet = container.query("SELECT * FROM CreditCards")
-for row in resultSet:
-    decryptedCardNumber = decryptData(encryptionKey, row[1])
-    print("Decrypted Credit Card Number:", decryptedCardNumber.decode())
+query = container.query("SELECT * FROM CreditCard")
+rs = query.fetch()
+while rs.has_next():
+    row = rs.next()  # Get the next row of the query result
+    decryptedCardNumber = decrypt_data(encryptionKey, row[1])
+    if decryptedCardNumber:
+        # Print the decrypted card number along with other details
+        print("Decrypted Credit Card Number:", decryptedCardNumber)
+        print("Expiration Date:", row[2])
+        print("Owner Name:", row[3])
 ```
 
 In conclusion, incorporating AES encryption with Python into GridDB is a powerful method to keep information safe. If you adhere to this methodology, data remains private and authentic in GridDB – effectively eliminating the potential for interference with its safety or illegal access or any other security leak.
