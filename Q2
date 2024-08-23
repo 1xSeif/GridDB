@@ -1,0 +1,84 @@
+# Title
+Data Inconsistency and Improper Transaction Handling in GridDB
+
+# Problem
+I'm building a financial system that stores transaction data in GridDB, when I try to process multiple transactions concurrently over the same account ends up returning an inconsistent final account balance. 
+
+# What did you try and what were you expecting?
+I tried processing transactions for the same account using multiple threads. I expected the final balance to show all the transactions correctly, but what I got is something inconsistent and does not show the value I was expecting.
+
+Below is my code
+```
+import griddb_python as griddb
+import threading
+
+def process_transactions(container, account_id, transactions):
+    for amount in transactions:
+        query = container.query(f"SELECT balance FROM accounts WHERE account_id = {account_id}")
+        rs = query.fetch(False)
+        
+        if rs.has_next():
+            current_balance = rs.next()[0]
+            new_balance = current_balance + amount
+            
+            # Update the balance
+            update_query = container.query(f"UPDATE accounts SET balance = {new_balance} WHERE account_id = {account_id}")
+            update_query.fetch(False)
+        else:
+            print(f"Account {account_id} not found.")
+
+try:
+    factory = griddb.StoreFactory.get_instance()
+    gridstore = factory.get_store(
+        notification_member = "127.0.0.1:10001",
+        cluster_name = "myCluster",
+        username = "admin",
+        password = "admin"
+    )
+    container_info = griddb.ContainerInfo("accounts",
+                                          [["account_id", griddb.Type.INTEGER],
+                                           ["balance", griddb.Type.DOUBLE]],
+                                          griddb.ContainerType.COLLECTION, True)
+    
+    container = gridstore.put_container(container_info)
+    
+    accounts = [
+        (1, 1000.0),
+        (2, 1500.0),
+    ]
+    
+    for account in accounts:
+        container.put(account)
+    
+    print("Initial data inserted successfully.")
+    
+    # Transactions to be processed 
+    transactions1 = [200, -100, 300]
+    transactions2 = [-150, 500, -250]
+    
+    # threads for processing transactions
+    t1 = threading.Thread(target=process_transactions, args=(container, 1, transactions1))
+    t2 = threading.Thread(target=process_transactions, args=(container, 1, transactions2))
+
+    t1.start()
+    t2.start()
+    
+    t1.join()
+    t2.join()
+    
+    query = container.query("SELECT * FROM accounts WHERE account_id = 1")
+    rs = query.fetch(False)
+    
+    while rs.has_next():
+        data = rs.next()
+        print(f"Final balance for account 1: {data}")
+    
+except griddb.GSException as e:
+    for i in range(e.get_error_stack_size()):
+        print("[", i, "]")
+        print(e.get_error_code(i))
+        print(e.get_location(i))
+        print(e.get_message(i))
+```
+
+Tags: GridDB, Python
